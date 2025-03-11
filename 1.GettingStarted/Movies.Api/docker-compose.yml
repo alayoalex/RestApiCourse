@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgis/postgis:13-master
+    restart: always
+    environment:
+      - POSTGRES_USER=course
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=movies
+    ports:
+      - '5432:5432'
