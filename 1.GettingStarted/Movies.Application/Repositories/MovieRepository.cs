@@ -18,14 +18,14 @@ namespace Movies.Application.Repositories
             _dbConnectionFactory = dbConnectionFactory;
         }
 
-        public async Task<bool> CreateAsync(Movie movie)
+        public async Task<bool> CreateAsync(Movie movie, CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             using var transaction = connection.BeginTransaction();
 
             var result = await connection.ExecuteAsync(new CommandDefinition(
                 "INSERT INTO movies2 (id, title, slug, yearofrelease) VALUES (@Id, @Title, @Slug, @YearOfRelease)",
-                movie
+                movie, cancellationToken: token
             ));
 
             if (result > 0)
@@ -34,7 +34,7 @@ namespace Movies.Application.Repositories
                 {
                     await connection.ExecuteAsync(new CommandDefinition(
                         "INSERT INTO genres (movieId, genre) VALUES (@MovieId, @Genre)",
-                        new { MovieId = movie.Id, Genre = genre }
+                        new { MovieId = movie.Id, Genre = genre }, cancellationToken: token
                     ));
                 }
             }
@@ -42,11 +42,11 @@ namespace Movies.Application.Repositories
             return result > 0;
         }
 
-        public async Task<Movie?> GetByIdAsync(Guid id)
+        public async Task<Movie?> GetByIdAsync(Guid id, CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             var movie = await connection.QuerySingleOrDefaultAsync<Movie>(
-                new CommandDefinition("""select * from movies2 where id = @id""", new { id }));
+                new CommandDefinition("""select * from movies2 where id = @id""", new { id }, cancellationToken: token));
 
             if (movie is null)
             {
@@ -56,7 +56,7 @@ namespace Movies.Application.Repositories
             var genres = await connection.QueryAsync<string>(
                 new CommandDefinition("""
                     select name from genres where movieid = @id
-                    """, new { id }));
+                    """, new { id }, cancellationToken: token));
 
             foreach (var genre in genres) 
             {
@@ -66,11 +66,11 @@ namespace Movies.Application.Repositories
             return movie;
         }
 
-        public async Task<Movie?> GetBySlugAsync(string slug)
+        public async Task<Movie?> GetBySlugAsync(string slug, CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             var movie = await connection.QuerySingleOrDefaultAsync<Movie>(
-                new CommandDefinition("""select * from movies2 where slug = @slug""", new { slug }));
+                new CommandDefinition("""select * from movies2 where slug = @slug""", new { slug }, cancellationToken: token));
 
             if (movie is null)
             {
@@ -80,7 +80,7 @@ namespace Movies.Application.Repositories
             var genres = await connection.QueryAsync<string>(
                 new CommandDefinition("""
                     select genre from genres where movieid = @id
-                    """, new { id = movie.Id }));
+                    """, new { id = movie.Id }, cancellationToken: token));
 
             foreach (var genre in genres)
             {
@@ -90,14 +90,14 @@ namespace Movies.Application.Repositories
             return movie;
         }
 
-        public async Task<IEnumerable<Movie>> GetAllAsync()
+        public async Task<IEnumerable<Movie>> GetAllAsync(CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             var result = await connection.QueryAsync(new CommandDefinition("""
                 select m.*, string_agg(g.genre, ',') as genres
                 from movies2 m left join genres g on m.id = g.movieid
                 group by id
-                """));
+                """, cancellationToken: token));
 
             return result.Select(x => new Movie
             {
@@ -108,56 +108,56 @@ namespace Movies.Application.Repositories
             });
         }
 
-        public async Task<bool> UpdateAsync(Movie movie)
+        public async Task<bool> UpdateAsync(Movie movie, CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             using var transaction = connection.BeginTransaction();
 
             await connection.ExecuteAsync(new CommandDefinition(
                 """delete from genres where movieid = @id""",
-                new { id = movie.Id }));
+                new { id = movie.Id }, cancellationToken: token));
 
             foreach (var genre in movie.Genres)
             {
                 await connection.ExecuteAsync(new CommandDefinition(
                     "INSERT INTO genres (movieId, genre) VALUES (@MovieId, @Genre)",
-                    new { MovieId = movie.Id, Genre = genre }
+                    new { MovieId = movie.Id, Genre = genre }, cancellationToken: token
                 ));
             }
 
             var result = await connection.ExecuteAsync(new CommandDefinition("""
                 update movies2 set title = @Title, slug = @Slug, yearofrelease = @YearOfRelease where id = @Id
-                """, movie));
+                """, movie, cancellationToken: token));
 
             transaction.Commit();
             return result > 0;
         }
 
-        public async Task<bool> DeleteByIdAsync(Guid id)
+        public async Task<bool> DeleteByIdAsync(Guid id, CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             using var transaction = connection.BeginTransaction();
 
             await connection.ExecuteAsync(new CommandDefinition(
                 """delete from genres where movieid = @id""",
-                new { id }));
+                new { id }, cancellationToken: token));
 
             var result = await connection.ExecuteAsync(new CommandDefinition("""
                 delete from movies2 where id = @id
-                """, new { id }));
+                """, new { id }, cancellationToken: token));
 
             transaction.Commit();
             return result > 0;
         }
 
-        public async Task<bool> ExistsByIdAsync(Guid id)
+        public async Task<bool> ExistsByIdAsync(Guid id, CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
 
             return await connection.ExecuteScalarAsync<bool>(
                 new CommandDefinition("""
                     select count(1) from movies2 where id = @id)
-                    """, new { id }));
+                    """, new { id }, cancellationToken: token));
         }
     }
 }
