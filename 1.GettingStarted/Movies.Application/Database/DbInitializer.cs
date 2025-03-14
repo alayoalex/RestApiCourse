@@ -16,9 +16,9 @@ namespace Movies.Application.Database
             _dbConnectionFactory = dbConnectionFactory;
         }
 
-        public async Task InitializeAsync()
+        public async Task InitializeAsync(CancellationToken token = default)
         {
-            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             await connection.ExecuteAsync(@"
                 CREATE TABLE IF NOT EXISTS movies2 (
                     id UUID PRIMARY KEY,
@@ -27,10 +27,11 @@ namespace Movies.Application.Database
                     yearofrelease INTEGER NOT NULL
                 );
             ");
-            
+
             await connection.ExecuteAsync("""
                 create unique index concurrently if not exists movies2_slug_idx on movies2 using btree(slug);
-                """);
+                """
+            );
 
             await connection.ExecuteAsync(@"
                 CREATE TABLE IF NOT EXISTS genres  (
