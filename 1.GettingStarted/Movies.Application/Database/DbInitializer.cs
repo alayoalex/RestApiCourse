@@ -39,6 +39,14 @@ namespace Movies.Application.Database
                     genre TEXT NOT NULL
                 );
             ");
+
+            await connection.ExecuteAsync("""
+                create table if not exists ratings (
+                userid uuid,
+                movieid uuid references movies2 (id),
+                rating integer not null,
+                primary key (userid, movieid))
+                """);
         }
     }
 }
