@@ -16,9 +16,9 @@ namespace Movies.Api.Controllers
     {
         private readonly IMovieService _movieService;
 
-        public MoviesController(IMovieService movieRepository)
+        public MoviesController(IMovieService movieService)
         {
-            _movieService = movieRepository;
+            _movieService = movieService;
         }
 
         [AllowAnonymous]
@@ -29,8 +29,9 @@ namespace Movies.Api.Controllers
             var options = request.MapToOptions()
                 .WithUser(userId);
             var movies = await _movieService.GetAllAsync(options, token);
-            var moviesResponse = movies.MapToMoviesResponse();
-            return Ok(movies);
+            var movieCount = await _movieService.GetCountAsync(options.Title, options.YearOfRelease, token);
+            var moviesResponse = movies.MapToMoviesResponse(request.Page, request.PageSize, movieCount);
+            return Ok(moviesResponse);
         }
 
         [AllowAnonymous]

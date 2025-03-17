@@ -79,5 +79,10 @@ namespace Movies.Application.Services
             movie.UserRating = ratings.UserRating;
             return movie;
         }
+
+        public async Task<int> GetCountAsync(string? title, int? yearOfRelease, CancellationToken token)
+        {
+            return await _movieRepository.GetCountAsync(title, yearOfRelease, token);
+        }
     }
 }
