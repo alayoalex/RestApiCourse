@@ -47,11 +47,14 @@ namespace Movies.Application.Repositories
             using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             var movie = await connection.QuerySingleOrDefaultAsync<Movie>(
                 new CommandDefinition("""
-                select m.*, round(avg(r.rating), 1) as rating, myr.rating as userrating
+                select 
+                    m.*, 
+                    round(avg(r.rating), 1) as rating, 
+                    myr.rating as userrating
                 from movies2 m 
-                left join ratings r on m.id = r.movieid
-                left join ratings myr on m.id = myr.movieid 
-                    and myr.userid = @userId
+                    left join ratings r on m.id = r.movieid
+                    left join ratings myr on m.id = myr.movieid 
+                        and myr.userid = @userId
                 where id = @id
                 group by id, userrating
                 """, new { id, userId }, cancellationToken: token));
@@ -79,12 +82,15 @@ namespace Movies.Application.Repositories
             using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             var movie = await connection.QuerySingleOrDefaultAsync<Movie>(
                 new CommandDefinition("""
-                select m.*, round(avg(r.rating), 1) as rating, myr.rating as userrating
+                select 
+                    m.*,
+                    round(avg(r.rating), 1) as rating, 
+                    myr.rating as userrating
                 from movies2 m 
-                left join ratings r on m.id = r.movieid
-                left join ratings myr on m.id = myr.movieid 
-                    and myr.userid = @userId
-                where id = @id
+                    left join ratings r on m.id = r.movieid
+                    left join ratings myr on m.id = myr.movieid 
+                        and myr.userid = @userId
+                where slug = @slug
                 group by id, userrating
                 """, new { slug, userId }, cancellationToken: token));
 
@@ -115,10 +121,10 @@ namespace Movies.Application.Repositories
                     round(avg(r.rating), 1) as rating,
                     myr.rating as userrating
                 from movies2 m 
-                left join genres g on m.id = g.movieid
-                left join ratings r on m.id = r.movieid
-                left join ratings myr on m.id = myr.movieid 
-                    and myr.userid = @userId
+                    left join genres g on m.id = g.movieid
+                    left join ratings r on m.id = r.movieid
+                    left join ratings myr on m.id = myr.movieid 
+                        and myr.userid = @userId
                 group by id, userrating
                 """, new { userId }, cancellationToken: token));
 
