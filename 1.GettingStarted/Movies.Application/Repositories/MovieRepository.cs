@@ -111,13 +111,15 @@ namespace Movies.Application.Repositories
             using var connection = await _dbConnectionFactory.CreateConnectionAsync(token);
             var result = await connection.QueryAsync(new CommandDefinition("""
                 select m.*, 
-                string_agg(distinct g.genre, ',') as genres
+                    string_agg(distinct g.genre, ',') as genres,
+                    round(avg(r.rating), 1) as rating,
+                    myr.rating as userrating
                 from movies2 m 
                 left join genres g on m.id = g.movieid
                 left join ratings r on m.id = r.movieid
                 left join ratings myr on m.id = myr.movieid 
                     and myr.userid = @userId
-                group by id
+                group by id, userrating
                 """, new { userId }, cancellationToken: token));
 
             return result.Select(x => new Movie
@@ -179,7 +181,9 @@ namespace Movies.Application.Repositories
 
             return await connection.ExecuteScalarAsync<bool>(
                 new CommandDefinition("""
-                    select count(1) from movies2 where id = @id)
+                    select count(1) 
+                    from movies2 
+                    where id = @id
                     """, new { id }, cancellationToken: token));
         }
     }

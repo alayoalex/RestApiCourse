@@ -52,10 +52,12 @@ namespace Movies.Application.Services
         {
             await _movieValidator.ValidateAndThrowAsync(movie, cancellationToken: token);
             var movieExists = await _movieRepository.ExistsByIdAsync(movie.Id, token);
+
             if (!movieExists)
             {
                 return null;
             }
+
             await _movieRepository.UpdateAsync(movie, token);
 
             if (!userId.HasValue) 
@@ -64,6 +66,7 @@ namespace Movies.Application.Services
                 movie.Rating = rating;
                 return movie;
             }
+
             var ratings = await _ratingRepository.GetRatingsAsync(movie.Id, userId.Value, token);
             movie.Rating = ratings.Rating;
             movie.UserRating = ratings.UserRating;
