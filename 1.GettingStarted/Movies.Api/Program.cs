@@ -4,6 +4,7 @@ using Movies.Application;
 using Movies.Application.Database;
 using Microsoft.IdentityModel.Tokens;
 using Movies.Api.Auth;
+using Asp.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -29,11 +30,21 @@ builder.Services.AddAuthentication(x =>
 
 builder.Services.AddAuthorization(x => 
 {
-    x.AddPolicy(AuthConstants.AdminUserPolicyName, p => p.RequireClaim(AuthConstants.AdminUserClaimName, "true"));
-    x.AddPolicy(AuthConstants.TrustedMemberPolicyName, p => p.RequireAssertion(c => c.User.HasClaim(m => m is { Type : AuthConstants.AdminUserClaimName, Value: "true"}) || c.User.HasClaim(m => m is { Type: AuthConstants.TrustedMemberClaimName, Value: "true" })));
+    x.AddPolicy(AuthConstants.AdminUserPolicyName, 
+        p => p.RequireClaim(AuthConstants.AdminUserClaimName, "true"));
+    x.AddPolicy(AuthConstants.TrustedMemberPolicyName, 
+        p => p.RequireAssertion(
+            c => c.User.HasClaim(m => m is { Type : AuthConstants.AdminUserClaimName, Value: "true"}) || 
+            c.User.HasClaim(m => m is { Type: AuthConstants.TrustedMemberClaimName, Value: "true" })));
 });
 
-// Add services to the container.
+builder.Services.AddApiVersioning(x =>
+{
+    x.DefaultApiVersion = new ApiVersion(1.0);
+    x.AssumeDefaultVersionWhenUnspecified = true;
+    x.ReportApiVersions = true;
+    x.ApiVersionReader = new HeaderApiVersionReader("api-version");
+}).AddMvc();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
