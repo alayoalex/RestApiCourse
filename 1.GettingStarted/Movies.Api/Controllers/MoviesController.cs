@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Movies.Api.Auth;
 using Movies.Api.Mapping;
 using Movies.Application.Model;
@@ -18,14 +19,17 @@ namespace Movies.Api.Controllers
     public class MoviesController : ControllerBase
     {
         private readonly IMovieService _movieService;
+        private readonly IOutputCacheStore _outputCacheStore;
 
-        public MoviesController(IMovieService movieService)
+        public MoviesController(IMovieService movieService, IOutputCacheStore outputCacheSotre)
         {
             _movieService = movieService;
+            _outputCacheStore = outputCacheSotre;
         }
 
         [AllowAnonymous]
         [HttpGet(ApiEndpoints.Movies.GetAll)]
+        [OutputCache(PolicyName = "MovieCache")]
         [ProducesResponseType(typeof(MoviesResponse), StatusCodes.Status201Created)]
         public async Task<IActionResult> GetAll([FromQuery] GetAllMoviesRequest request, CancellationToken token)
         {
@@ -40,6 +44,7 @@ namespace Movies.Api.Controllers
 
         [AllowAnonymous]
         [HttpGet(ApiEndpoints.Movies.Get)]
+        [OutputCache(PolicyName = "MovieCache")]
         [ProducesResponseType(typeof(MovieResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetV1([FromRoute]string idOrSlug, CancellationToken token)
@@ -66,6 +71,7 @@ namespace Movies.Api.Controllers
         {
             var movie = request.MapToMovie();
             var result = await _movieService.CreateAsync(movie, token);
+            await _outputCacheStore.EvictByTagAsync("movies", token);
             return CreatedAtAction(nameof(GetV1), new { idOrSlug = movie.Id }, movie);
         }
 
@@ -84,6 +90,7 @@ namespace Movies.Api.Controllers
                 return NotFound();
             }
             var response = movie.MapToMovieResponse();
+            await _outputCacheStore.EvictByTagAsync("movies", token);
             return Ok(response);
         }
 
@@ -98,6 +105,7 @@ namespace Movies.Api.Controllers
             {
                 return NotFound();
             }
+            await _outputCacheStore.EvictByTagAsync("movies", token);
             return Ok();
         }
     }
